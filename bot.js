@@ -36,18 +36,18 @@ api.on('message', function (message) {
                     "I want to help you to make shedules for your events :clock2:\n" +
                     "Moreover I can notify you :love_letter: so you would never miss your mother in law's birthday! ;3");
                 sendTextMessage(message.chat.id,welcome);
-            },1000);
-            setTimeout(function () {
-                api.sendMessage({
-                    chat_id:message.chat.id,
-                    text:"Would you like to start?",
-                    reply_markup:JSON.stringify({
-                        inline_keyboard: [
-                            [{ text: 'Create event', callback_data: 'start' }]
-                        ]
+                setTimeout(function () {
+                    api.sendMessage({
+                        chat_id:message.chat.id,
+                        text:"Would you like to start?",
+                        reply_markup:JSON.stringify({
+                            inline_keyboard: [
+                                [{ text: 'Create event', callback_data: 'start' }]
+                            ]
+                        })
                     })
-                })
-            },2000);
+                },1000);
+            },1000);
 
         }else{
             api.sendPhoto({
