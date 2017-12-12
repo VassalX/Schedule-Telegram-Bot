@@ -1,76 +1,110 @@
-const usersStorageFile = 'users.json';
+var telegram = require('node-telegram-bot-api');
 var emoji = require('node-emoji');
-var telegram = require('telegram-bot-api');
-var api = new telegram({
-    token: '358469384:AAHYQ-NrDsfR6vbNf19pa1wflp56TIr4N_U',
+const usersStorageFile = 'users.json';
+const token = '358469384:AAHYQ-NrDsfR6vbNf19pa1wflp56TIr4N_U';
+var api = new telegram(token,{
     updates: {
         enabled: true,
         get_interval: 100
     },
     polling: true
 });
+
+var event, time, state = 0;
+api.onText(/\/start/,function (message,match) {
+    state=0;
+    var welcome =  emoji.emojify(   "Hello, "+message.chat.first_name+" "+message.chat.last_name+"!\n"+
+        "I am your telegram bot! :grin:\n"+
+        "I want to help you to make shedules for your events :clock2:\n" +
+        "Moreover I can notify you :love_letter: so you would never miss your mother in law's birthday! ;3");
+    api.sendMessage(message.chat.id,welcome);
+    api.sendMessage(message.chat.id,"Please, enter /remind if you are ready to add event!");
+});
+api.onText(/\/remind/, function (message) {
+    state=1;
+    api.sendMessage(message.chat.id,emoji.emojify("Okay! Please, enter the name of the event :smile:"));
+});
+function checkTime(time){
+
+}
 api.on('message', function (message) {
+    if(message.text.charAt(0)==='/')
+        return;
     console.log(message);
+    var text = message.text;
+    var userId = message.chat.id;
 
     // It'd be good to check received message type here
     // And react accordingly
     // We consider that only text messages can be received here
 
     if (message.hasOwnProperty('text')) {
-        var chat_id = message.chat.id;
-        /*api.sendMessage({
-            chat_id: message.chat.id,
-            text: message.text ? message.text : 'This message doesn\'t contain text'
-        })
-            .then(function (message) {
-                //console.log(message);
-                addNewUser(message.chat);
-            })
-            .catch(function (err) {
-                console.log(err);
-            });*/
-        if(message.text==='/start'){
-            setTimeout(function () {
-                var welcome =  emoji.emojify("Hello, "+message.chat.first_name+" "+message.chat.last_name+"!\n"+
-                    "I am your telegram bot! :grin:\n"+
-                    "I want to help you to make shedules for your events :clock2:\n" +
-                    "Moreover I can notify you :love_letter: so you would never miss your mother in law's birthday! ;3");
-                sendTextMessage(message.chat.id,welcome);
-                setTimeout(function () {
-                    api.sendMessage({
-                        chat_id:message.chat.id,
-                        text:"Would you like to start?",
-                        reply_markup:JSON.stringify({
-                            inline_keyboard: [
-                                [{ text: 'Create event', callback_data: 'start' }]
-                            ]
-                        })
-                    })
-                },1000);
-            },1000);
+        switch(state) {
+            case 0:
+                api.sendMessage(urserId, "Are you ready to create event? Please, enter /remind");
+                break;
+            case 1://event
+                state = 2;
+                api.sendMessage(userId, emoji.emojify("Great! Now enter the date :clock2: in this format YY-MM-DD-HH-MM"));
+                event = text;
+                break;
+            case 2://time
+                if (dateIsOkay(text)) {
+                    state = 3;
+                    time = text;
+                    api.sendMessage(user, emoji.emojify("Very nice! Now you can enter the number of repeats or /finish"));
+                } else {
+                    api.sendMessage(userId, emoji.emojify("The format is incorrect :sad: Please, enter the date like this YY-MM-DD-HH-MM"));
+                }
+                break;
+            case 3://number and interval
+                var str = text.split(" ");
+                if(parseInt(str[0])<0&&dateIsOkay(str[1])){
+                    state = 4;
+                    if(number>1)
+                        dublicateEvents(parseInt(str));
+                }
+                state = 4;
+                break;
+            case 4:
+                break;
 
-        }else{
-            api.sendPhoto({
-                chat_id: message.chat.id,
-                caption: message.text ? message.text : 'This message doesn\'t contain text',
-                photo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Nativity_tree2011.jpg/1200px-Nativity_tree2011.jpg"
-            });
         }
     } else if (message.hasOwnProperty('sticker')) {
+        //TODO send random sticker
         console.log('Sticker');
-        /*api.sendMessage({
-            chat_id:message.chat.id,
-            sticker: message.sticker
-        }).then(function (message) {
-            console.log(message);
-            addNewUser(message.chat);
-        })
-            .catch(function (err) {
-                console.log(err);
-            });*/
     }
 });
 
+function addToDB(events){
+    //TODO
+}
+
+function dateIsOkay(text){
+    /*var time = text.split("-").reverse();
+    var date;
+    var now = new Date();
+    switch(time.length){
+        case 1:
+            if(!validateMinutes(time[0]))
+                return false;
+            hours+=(time[0]<now.getMinutes())?1:0;
+            var days = now.get
+            if(hours>23){
+                hours-=24;
+
+            }
+            date = new Date(now.getYear(),now.getMonth(),now.getDate(),hours,time[0],0,0);
+            break;
+    }*/
+    return true;
+}
+function validateMinutes(text){
+    minutes = parseInt(text);
+    if(minutes<0||minutes>59)
+        return false;
+    return true;
+}
 var fs = require('fs');
 
 fs.readFile(usersStorageFile, 'utf8', function (err, data) {
