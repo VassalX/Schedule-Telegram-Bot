@@ -6,18 +6,18 @@ var api = new telegram({
     updates: {
         enabled: true,
         get_interval: 100
-    }
+    },
+    polling: true
 });
-
 api.on('message', function (message) {
     console.log(message);
-    var chat_id = message.chat.id;
 
-    // It'd be good to chek received message type here
+    // It'd be good to check received message type here
     // And react accordingly
     // We consider that only text messages can be received here
 
     if (message.hasOwnProperty('text')) {
+        var chat_id = message.chat.id;
         /*api.sendMessage({
             chat_id: message.chat.id,
             text: message.text ? message.text : 'This message doesn\'t contain text'
@@ -30,11 +30,25 @@ api.on('message', function (message) {
                 console.log(err);
             });*/
         if(message.text==='/start'){
-            var welcome =  emoji.emojify("Hello, "+message.from.first_name+" "+message.from.last_name+"!\n"+
-                "I am your telegram bot! :grin:\n"+
-                "I want to help you to make shedules for your events :clock2:\n" +
-                "Moreover I can notify you :love_letter: so you would never miss your mother in law's birthday! ;3");
-            sendTextMessage(message.from.id,welcome);
+            setTimeout(function () {
+                var welcome =  emoji.emojify("Hello, "+message.chat.first_name+" "+message.chat.last_name+"!\n"+
+                    "I am your telegram bot! :grin:\n"+
+                    "I want to help you to make shedules for your events :clock2:\n" +
+                    "Moreover I can notify you :love_letter: so you would never miss your mother in law's birthday! ;3");
+                sendTextMessage(message.chat.id,welcome);
+            },1000);
+            setTimeout(function () {
+                api.sendMessage({
+                    chat_id:message.chat.id,
+                    text:"Would you like to start?",
+                    reply_markup:JSON.stringify({
+                        inline_keyboard: [
+                            [{ text: 'Create event', callback_data: 'start' }]
+                        ]
+                    })
+                })
+            },2000);
+
         }else{
             api.sendPhoto({
                 chat_id: message.chat.id,
