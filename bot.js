@@ -13,7 +13,7 @@ api.on('message', function (message) {
     console.log(message);
     var chat_id = message.chat.id;
 
-    // It'd be good to check received message type here
+    // It'd be good to chek received message type here
     // And react accordingly
     // We consider that only text messages can be received here
 
