@@ -1,11 +1,11 @@
 const usersStorageFile = 'users.json';
-
+var emoji = require('node-emoji');
 var telegram = require('telegram-bot-api');
 var api = new telegram({
     token: '358469384:AAHYQ-NrDsfR6vbNf19pa1wflp56TIr4N_U',
     updates: {
         enabled: true,
-        get_interval: 500
+        get_interval: 100
     }
 });
 
@@ -29,11 +29,19 @@ api.on('message', function (message) {
             .catch(function (err) {
                 console.log(err);
             });*/
-        api.sendPhoto({
-            chat_id: message.chat.id,
-            caption: message.text ? message.text : 'This message doesn\'t contain text',
-            photo: "https://images.ua.prom.st/549282580_w640_h640_cid369720_pid39929267-cf203b20.jpg"
-        });
+        if(message.text==='/start'){
+            var welcome =  emoji.emojify("Hello, "+message.from.first_name+" "+message.from.last_name+"!\n"+
+                "I am your telegram bot! :grin:\n"+
+                "I want to help you to make shedules for your events :clock2:\n" +
+                "Moreover I can notify you :love_letter: so you would never miss your mother in law's birthday! ;3");
+            sendTextMessage(message.from.id,welcome);
+        }else{
+            api.sendPhoto({
+                chat_id: message.chat.id,
+                caption: message.text ? message.text : 'This message doesn\'t contain text',
+                photo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Nativity_tree2011.jpg/1200px-Nativity_tree2011.jpg"
+            });
+        }
     } else if (message.hasOwnProperty('sticker')) {
         console.log('Sticker');
         /*api.sendMessage({
@@ -61,7 +69,7 @@ fs.readFile(usersStorageFile, 'utf8', function (err, data) {
         })
 
     }
-})
+});
 
 function addEvent(userId, eventInfo, startTime, endTime){
     fs.readFile(usersStorageFile, function(err, data){
@@ -105,5 +113,16 @@ function sendTextMessage(receiverId, messageText) {
     }
 }
 
-
+function timeConverter(UNIX_timestamp){
+    var a = new Date(UNIX_timestamp * 1000);
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var year = a.getFullYear();
+    var month = months[a.getMonth()];
+    var date = a.getDate();
+    var hour = a.getHours();
+    var min = a.getMinutes();
+    var sec = a.getSeconds();
+    var time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+    return time;
+}
 
