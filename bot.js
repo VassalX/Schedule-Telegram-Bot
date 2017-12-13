@@ -1,5 +1,8 @@
 var telegram = require('node-telegram-bot-api');
 var emoji = require('node-emoji');
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+mongoose.connect('mongodb://localhost/test');
 const usersStorageFile = 'users.json';
 const token = '358469384:AAHYQ-NrDsfR6vbNf19pa1wflp56TIr4N_U';
 var api = new telegram(token,{
@@ -9,18 +12,73 @@ var api = new telegram(token,{
     },
     polling: true
 });
-
-var event, time, state = 0;
+const message = {
+    error: emoji.emojify("Oh, no! :sob: An error has occured! Please, try again later... "),
+    start: emoji.emojify("Please, enter /remind if you are ready to add event! :wink:")
+};
+var db =	mongoose.connection;
+db.on('error',	function	(err)	{
+    console.log('connection	error:',	err.message);
+});
+db.once('open',	function	callback	()	{
+    console.log("Connected	to	DB!");
+});
+var userSchema = new Schema({
+    id: String,
+    events: [{
+        event: String,
+        time: Date
+    }],
+    state: Number
+});
+var UserModel = mongoose.model('UserModel',userSchema);
+function userExists(id,callback){
+    UserModel.findOne({id: id}, function (err, foundUser) {
+        if (err) {
+            callback(err, null);
+            return;
+        }
+        if (foundUser) {
+            callback(null, false);
+        } else {
+            callback(null, true);
+        }
+    });
+}
+function saveUser(id,callback){
+    userExists(id,function(err,result){
+        if(err){
+            callback(err,null);
+            return;
+        }
+        if(result){
+            var newUser = new UserModel({
+                id: id,
+                events: [],
+                state: 0
+            });
+            newUser.save(function(err){
+                if(err){
+                    callback(err,null);
+                }else{
+                    callback(null,true);
+                }
+            });
+        }else{
+            callback(null,false);
+        }
+    });
+}
 api.onText(/\/start/,function (message,match) {
-    state=0;
-    var welcome =  emoji.emojify(   "Hello, "+message.chat.first_name+" "+message.chat.last_name+"!\n"+
-        "I am your telegram bot! :grin:\n"+
-        "I want to help you to make shedules for your events :clock2:\n" +
-        "Moreover I can notify you :love_letter: so you would never miss your mother in law's birthday! ;3");
-    api.sendMessage(message.chat.id,welcome);
-    api.sendMessage(message.chat.id,"Please, enter /remind if you are ready to add event!");
+    var userId = message.hasOwnProperty('chat') ? message.chat.id : message.from.id;
+    saveUser(userId,function (err,reult){
+        if(err){
+            api.sendMessage()
+        }
+    });
 });
 api.onText(/\/remind/, function (message) {
+    var clientId = message.hasOwnProperty('chat') ? message.chat.id : message.from.id;
     state=1;
     api.sendMessage(message.chat.id,emoji.emojify("Okay! Please, enter the name of the event :smile:"));
 });
@@ -28,6 +86,7 @@ function checkTime(time){
 
 }
 api.on('message', function (message) {
+    var clientId = message.hasOwnProperty('chat') ? message.chat.id : message.from.id;
     if(message.text.charAt(0)==='/')
         return;
     console.log(message);
@@ -41,7 +100,7 @@ api.on('message', function (message) {
     if (message.hasOwnProperty('text')) {
         switch(state) {
             case 0:
-                api.sendMessage(urserId, "Are you ready to create event? Please, enter /remind");
+                api.sendMessage(userId, "Are you ready to create event? Please, enter /remind");
                 break;
             case 1://event
                 state = 2;
@@ -52,7 +111,7 @@ api.on('message', function (message) {
                 if (dateIsOkay(text)) {
                     state = 3;
                     time = text;
-                    api.sendMessage(user, emoji.emojify("Very nice! Now you can enter the number of repeats or /finish"));
+                    api.sendMessage(userId, emoji.emojify("Very nice! Now you can enter the number of repeats or /finish"));
                 } else {
                     api.sendMessage(userId, emoji.emojify("The format is incorrect :sad: Please, enter the date like this YY-MM-DD-HH-MM"));
                 }
